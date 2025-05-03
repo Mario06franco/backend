@@ -14,15 +14,15 @@ const uploadRoutes = require('./routes/uploadRoutes');
 // Configuración de Express
 const app = express();
 
-// Configuración de CORS
-app.use(cors({
+const corsOptions = {
   origin: 'https://www.pruebasenproduccion.site',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-}));
+  credentials: true
+};
 
-// Ruta para manejar OPTIONS
-app.options('*', cors());
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); 
 
 // Configuración de Multer
 const storage = multer.diskStorage({
