@@ -15,7 +15,7 @@ const uploadRoutes = require('./routes/uploadRoutes');
 app.use(cors({
   origin:   'https://www.pruebasenproduccion.site',
   // Permitir solicitudes desde el frontend
-  methods: ['GET', 'POST', 'PUT', 'DELETE'], // Métodos permitidos
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Métodos permitidos
   allowedHeaders: ['Content-Type', 'Authorization'], // Cabeceras permitidas
 }));
 
