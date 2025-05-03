@@ -13,7 +13,8 @@ const path = require('path');
 const uploadRoutes = require('./routes/uploadRoutes');
 // Configurar CORS
 app.use(cors({
-  origin: 'http://localhost:5173', // Permitir solicitudes desde el frontend
+  origin:   'http://localhost:5173',
+  'https://www.pruebasenproduccion.site', // Permitir solicitudes desde el frontend
   methods: ['GET', 'POST', 'PUT', 'DELETE'], // Métodos permitidos
   allowedHeaders: ['Content-Type', 'Authorization'], // Cabeceras permitidas
 }));
@@ -65,7 +66,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Conexión a MongoDB
-mongoose.connect('mongodb://localhost:27017/leclatDB')
+mongoose.connect('mongodb+srv://mariofraco93:Ma104291*@leclatdb.dvt9irn.mongodb.net/?retryWrites=true&w=majority&appName=LeclatDB')
   .then(() => console.log('✅ Conectado a MongoDB'))
   .catch(err => console.error('❌ Error de conexión:', err));
 
