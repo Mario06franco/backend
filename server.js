@@ -98,7 +98,7 @@ app.get("/", (req, res) => {
 });
 
 // Conexión a MongoDB
-mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://mariofraco93:Ma104291*@leclatdb.dvt9irn.mongodb.net/?retryWrites=true&w=majority&appName=LeclatDB')
+mongoose.connect(process.env.MONGO_URI || 'mongodb+srv://mariofraco93:Ma104291@leclatdb.dvt9irn.mongodb.net/?retryWrites=true&w=majority&appName=LeclatDB')
   .then(() => console.log('✅ Conectado a MongoDB'))
   .catch(err => console.error('❌ Error de conexión:', err));
 
