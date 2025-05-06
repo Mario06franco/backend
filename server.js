@@ -14,8 +14,20 @@ const uploadRoutes = require('./routes/uploadRoutes');
 // Configuración de Express
 const app = express();
 
+const allowedOrigins = [
+  'https://www.pruebasenproduccion.site',
+  'https://pruebasenproduccion.site', // Por si falta el www
+  'http://localhost:3000' // Para desarrollo
+];
+
 const corsOptions = {
-  origin: 'https://www.pruebasenproduccion.site',
+  origin: function (origin, callback) {
+    if (allowedOrigins.includes(origin) || !origin) {
+      callback(null, true);
+    } else {
+      callback(new Error('Dominio no permitido por CORS'));
+    }
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
@@ -69,8 +81,24 @@ app.use('/uploads', express.static('public/uploads'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Agrega esto después de los middlewares y antes de las otras rutas
+app.get("/", (req, res) => {
+  res.json({
+    message: "¡Bienvenido al backend de Leclat!",
+    endpoints: {
+      citas: "/api/citas",
+      contacto: "/api/contacto",
+      auth: "/api/auth",
+      usuarios: "/api/usuarios",
+      historias: "/api/historias",
+      servicios: "/api/servicios",
+      upload: "/api/upload"
+    }
+  });
+});
+
 // Conexión a MongoDB
-mongoose.connect('mongodb+srv://mariofraco93:Ma104291*@leclatdb.dvt9irn.mongodb.net/?retryWrites=true&w=majority&appName=LeclatDB')
+mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://mariofraco93:Ma104291*@leclatdb.dvt9irn.mongodb.net/?retryWrites=true&w=majority&appName=LeclatDB')
   .then(() => console.log('✅ Conectado a MongoDB'))
   .catch(err => console.error('❌ Error de conexión:', err));
 
@@ -83,6 +111,12 @@ app.use('/api/contacto', contactoRoutes);
 app.use('/api/historias', historiasRoutes);
 app.use('/api/servicios', serviciosRoutes);
 app.use('/api/upload', uploadRoutes);
+
+// Al final del archivo, después de las rutas
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: 'Algo salió mal en el servidor' });
+});
 
 // Exportar la app para que Vercel la pueda usar
 module.exports = app;
