@@ -10,9 +10,11 @@ const serviciosRoutes = require('./routes/serviciosRoutes');
 const multer = require('multer');
 const path = require('path');
 const uploadRoutes = require('./routes/uploadRoutes');
+const PORT = process.env.PORT || 3001; // 👈 Render necesita esto
 
 // Configuración de Express
 const app = express();
+
 
 const allowedOrigins = [
   'https://www.pruebasenproduccion.site',
@@ -32,6 +34,10 @@ const corsOptions = {
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 };
+
+app.listen(PORT, () => {
+  console.log(`Servidor corriendo en el puerto ${PORT}`);
+});
 
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions)); 
