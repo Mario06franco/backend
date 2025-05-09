@@ -18,26 +18,35 @@ const app = express();
 
 const allowedOrigins = [
   'https://www.pruebasenproduccion.site',
-  'https://pruebasenproduccion.site', // Por si falta el www
-  'http://localhost:3000' // Para desarrollo
+  'https://pruebasenproduccion.site',
+  'http://localhost:3000',
+  'https://leclat-git-main-mario-francos-projects.vercel.app' // Añade tu URL de Vercel
 ];
 
 const corsOptions = {
   origin: function (origin, callback) {
-    if (allowedOrigins.includes(origin) || !origin) {
+    // Permitir solicitudes sin origen (como Postman o móviles)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.some(allowedOrigin => 
+      origin === allowedOrigin || 
+      origin.includes(allowedOrigin.replace('https://', '').replace('http://', ''))
+    )) {
       callback(null, true);
     } else {
+      console.error('Dominio no permitido por CORS:', origin);
       callback(new Error('Dominio no permitido por CORS'));
     }
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  credentials: true,
+  optionsSuccessStatus: 200 // Algunos navegadores necesitan esto
 };
 
-// MUEVE esto ANTES de cualquier ruta o middleware
+// Esto debe estar AL INICIO, antes de cualquier ruta
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); 
+app.options('*', cors(corsOptions)); // Habilitar pre-flight para todas las rutas
 
 // Luego los otros middlewares
 app.use(express.json());
@@ -134,9 +143,11 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Algo salió mal en el servidor' });
 });
 
-if (process.env.NODE_ENV !== 'production') {
-  app.listen(PORT, () => console.log(`Servidor en puerto ${PORT}`));
-}
+app.get('/api/status', (req, res) => {
+  res.json({ status: 'Backend en Vercel ✅' });
+});
+
+
 
 // Exportar la app para que Vercel la pueda usar
 module.exports = app;
