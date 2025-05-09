@@ -35,12 +35,20 @@ const corsOptions = {
   credentials: true
 };
 
+// MUEVE esto ANTES de cualquier ruta o middleware
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); 
+
+// Luego los otros middlewares
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en el puerto ${PORT}`);
 });
 
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); 
+
 
 // Configuración de Multer
 const storage = multer.diskStorage({
@@ -83,9 +91,7 @@ app.post('/api/upload', upload.single('imagen'), (req, res) => {
 // Servir archivos estáticos
 app.use('/uploads', express.static('public/uploads'));
 
-// Middlewares
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+
 
 // Agrega esto después de los middlewares y antes de las otras rutas
 app.get("/", (req, res) => {
@@ -104,9 +110,13 @@ app.get("/", (req, res) => {
 });
 
 // Conexión a MongoDB
-mongoose.connect(process.env.MONGO_URI || 'mongodb+srv://mariofraco93:Ma104291@leclatdb.dvt9irn.mongodb.net/?retryWrites=true&w=majority&appName=LeclatDB')
+
+mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('✅ Conectado a MongoDB'))
-  .catch(err => console.error('❌ Error de conexión:', err));
+  .catch(err => {
+    console.error('❌ Error de conexión a MongoDB:', err);
+    process.exit(1); // Detener la aplicación si no hay conexión a DB
+  });
 
 // Configuración de rutas
 app.use('/api', usuariosRoutes);
@@ -123,6 +133,10 @@ app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ error: 'Algo salió mal en el servidor' });
 });
+
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => console.log(`Servidor en puerto ${PORT}`));
+}
 
 // Exportar la app para que Vercel la pueda usar
 module.exports = app;
