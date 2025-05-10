@@ -3,10 +3,19 @@ const router = express.Router();
 const Usuario = require('../models/Usuario');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const { validateRegister, validateLogin } = require('../middleware/authValidation');
+const { actualizarUsuario } = require('../controllers/auth.controller');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'clave_secreta_para_firmar_token';
 
+const JWT_SECRET = process.env.JWT_SECRET;
+const authenticate = require('../middleware/auth.middleware'); // Importar el middleware
+
+// Ruta protegida (requiere autenticación)
+router.get('/perfil', authenticate, (req, res) => {
+  res.json({
+    message: 'Acceso autorizado',
+    user: req.user, // Datos del usuario autenticado
+  });
+});
 // Registro mejorado con hash de contraseña
 router.post('/registrar', async (req, res) => {
   try {

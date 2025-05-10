@@ -39,9 +39,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 
-app.listen(PORT, () => {
-  console.log(`Servidor corriendo en el puerto ${PORT}`);
-});
 
 
 
@@ -108,10 +105,8 @@ app.get("/", (req, res) => {
 const connectDB = async () => {
   try {
     await mongoose.connect(process.env.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 5000,
-      socketTimeoutMS: 45000
+      serverSelectionTimeoutMS: 5000, // Tiempo de espera para seleccionar un servidor
+      socketTimeoutMS: 45000 // Tiempo de espera para la conexión del socket
     });
     console.log('✅ Conectado a MongoDB Atlas');
   } catch (err) {
@@ -119,8 +114,11 @@ const connectDB = async () => {
     process.exit(1);
   }
 };
-
 connectDB();
+
+app.listen(PORT, () => {
+  console.log(`Servidor corriendo en el puerto ${PORT}`);
+});
 
 
 // Configuración de rutas
