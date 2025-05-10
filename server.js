@@ -1,3 +1,4 @@
+require('dotenv').config(); // Añade esto al inicio
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -15,38 +16,23 @@ const PORT = process.env.PORT || 3001; // 👈 Render necesita esto
 // Configuración de Express
 const app = express();
 
-
-const allowedOrigins = [
-  'https://www.pruebasenproduccion.site',
-  'https://pruebasenproduccion.site',
-  'http://localhost:3000',
-  'https://leclat-git-main-mario-francos-projects.vercel.app' // Añade tu URL de Vercel
-];
-
+// Configuración mejorada de CORS
 const corsOptions = {
-  origin: function (origin, callback) {
-    // Permitir solicitudes sin origen (como Postman o móviles)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.some(allowedOrigin => 
-      origin === allowedOrigin || 
-      origin.includes(allowedOrigin.replace('https://', '').replace('http://', ''))
-    )) {
-      callback(null, true);
-    } else {
-      console.error('Dominio no permitido por CORS:', origin);
-      callback(new Error('Dominio no permitido por CORS'));
-    }
-  },
+  origin: [
+    'https://www.pruebasenproduccion.site',
+    'https://pruebasenproduccion.site',
+    'http://localhost:3000',
+    'https://leclat-git-main-mario-francos-projects.vercel.app',
+    'https://leclat-app.vercel.app'
+  ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
-  credentials: true,
-  optionsSuccessStatus: 200 // Algunos navegadores necesitan esto
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
 };
 
 // Esto debe estar AL INICIO, antes de cualquier ruta
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // Habilitar pre-flight para todas las rutas
+app.options('*', cors(corsOptions));
 
 // Luego los otros middlewares
 app.use(express.json());
@@ -118,19 +104,29 @@ app.get("/", (req, res) => {
   });
 });
 
-// Conexión a MongoDB
-
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('✅ Conectado a MongoDB'))
-  .catch(err => {
+// Conexión optimizada para Vercel
+const connectDB = async () => {
+  try {
+    await mongoose.connect(process.env.MONGODB_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000
+    });
+    console.log('✅ Conectado a MongoDB Atlas');
+  } catch (err) {
     console.error('❌ Error de conexión a MongoDB:', err);
-    process.exit(1); // Detener la aplicación si no hay conexión a DB
-  });
+    process.exit(1);
+  }
+};
+
+connectDB();
+
 
 // Configuración de rutas
 app.use('/api', usuariosRoutes);
-app.use('/api/usuarios', usuariosRoutes);
-app.use('/api/auth', authRoutes);
+app.use('/api/usuarios', require('./routes/usuarios'));
+app.use('/api/auth', require('./routes/auth.routes'));
 app.use('/api/citas', citasRoutes);
 app.use('/api/contacto', contactoRoutes);
 app.use('/api/historias', historiasRoutes);
@@ -147,6 +143,20 @@ app.get('/api/status', (req, res) => {
   res.json({ status: 'Backend en Vercel ✅' });
 });
 
+// Ruta de prueba
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'OK',
+    dbStatus: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
+// Manejo de errores
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: 'Error interno del servidor' });
+});
 
 
 // Exportar la app para que Vercel la pueda usar

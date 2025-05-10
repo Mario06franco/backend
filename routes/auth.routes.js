@@ -2,67 +2,108 @@ const express = require('express');
 const router = express.Router();
 const Usuario = require('../models/Usuario');
 const jwt = require('jsonwebtoken');
-const { actualizarUsuario } = require('../controllers/auth.controller');
+const bcrypt = require('bcryptjs');
+const { validateRegister, validateLogin } = require('../middleware/authValidation');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'clave_secreta_para_firmar_token';
 
-// Registro
+// Registro mejorado con hash de contraseña
 router.post('/registrar', async (req, res) => {
   try {
-    const { nombre, cedula, correo, celular, password, rol, estado } = req.body;
+    const { nombre, cedula, correo, celular, password, rol } = req.body;
 
-    const existeUsuario = await Usuario.findOne({ $or: [{ cedula }, { correo }] });
-    if (existeUsuario) {
-      return res.status(400).json({ message: '❌ Ya existe un usuario con esa cédula o correo' });
+    // Validación básica
+    if (!nombre || !cedula || !correo || !password) {
+      return res.status(400).json({ message: 'Faltan campos obligatorios' });
     }
 
-    const nuevoUsuario = new Usuario({ nombre, cedula, correo, celular, password, rol, estado });
+    // Verificar si el usuario ya existe
+    const existeUsuario = await Usuario.findOne({ $or: [{ cedula }, { correo }] });
+    if (existeUsuario) {
+      return res.status(400).json({ message: 'Ya existe un usuario con esa cédula o correo' });
+    }
+
+    // Hash de la contraseña
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Crear nuevo usuario
+    const nuevoUsuario = new Usuario({
+      nombre,
+      cedula,
+      correo,
+      celular,
+      password: hashedPassword,
+      rol: rol || 'cliente'
+    });
+
     await nuevoUsuario.save();
 
-    res.status(201).json({ message: '✅ Usuario registrado correctamente' });
+    // Generar token JWT
+    const token = jwt.sign(
+      { id: nuevoUsuario._id, rol: nuevoUsuario.rol },
+      JWT_SECRET,
+      { expiresIn: '1d' }
+    );
+
+    res.status(201).json({
+      message: 'Usuario registrado correctamente',
+      token,
+      user: {
+        id: nuevoUsuario._id,
+        nombre: nuevoUsuario.nombre,
+        correo: nuevoUsuario.correo,
+        rol: nuevoUsuario.rol
+      }
+    });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    console.error('Error en registro:', error);
+    res.status(500).json({ message: 'Error en el servidor' });
   }
 });
 
-// Login
+// Login mejorado con comparación de hash
 router.post('/login', async (req, res) => {
-  const { identificador, password } = req.body;
-
   try {
+    const { identificador, password } = req.body;
+
+    // Buscar usuario por cédula o correo
     const usuario = await Usuario.findOne({
-      $or: [{ cedula: identificador }, { correo: identificador }],
+      $or: [{ cedula: identificador }, { correo: identificador }]
     });
 
     if (!usuario) {
-      return res.status(404).json({ message: '❌ Usuario no encontrado' });
+      return res.status(404).json({ message: 'Usuario no encontrado' });
     }
 
-    if (usuario.password !== password) {
-      return res.status(401).json({ message: '❌ Contraseña incorrecta' });
+    // Comparar contraseñas
+    const isMatch = await bcrypt.compare(password, usuario.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Credenciales inválidas' });
     }
 
+    // Generar token JWT
     const token = jwt.sign(
       { id: usuario._id, rol: usuario.rol },
       JWT_SECRET,
       { expiresIn: '1d' }
     );
 
-    res.status(200).json({
-      message: '✅ Inicio de sesión exitoso',
+    res.json({
+      message: 'Inicio de sesión exitoso',
       token,
       user: {
         id: usuario._id,
         nombre: usuario.nombre,
-        cedula: usuario.cedula,
         correo: usuario.correo,
-        rol: usuario.rol,
+        rol: usuario.rol
       }
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error en login:', error);
+    res.status(500).json({ message: 'Error en el servidor' });
   }
 });
+
 
 // Actualizar usuario
 router.put('/usuarios/:id', actualizarUsuario);
