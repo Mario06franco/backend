@@ -32,16 +32,13 @@ router.post('/registrar', async (req, res) => {
       return res.status(400).json({ message: 'Ya existe un usuario con esa cédula o correo' });
     }
 
-    // Hash de la contraseña
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Crear nuevo usuario
+    // Crear nuevo usuario (el modelo se encarga de hacer el hash automáticamente)
     const nuevoUsuario = new Usuario({
       nombre,
       cedula,
       correo,
       celular,
-      password: hashedPassword,
+      password,
       rol: rol || 'cliente'
     });
 
@@ -70,18 +67,29 @@ router.post('/registrar', async (req, res) => {
   }
 });
 
+
 // Login mejorado con comparación de hash
+// Login mejorado con verificación de existencia de contraseña
 router.post('/login', async (req, res) => {
   try {
     const { identificador, password } = req.body;
 
+    // Validación básica
+    if (!identificador || !password) {
+      return res.status(400).json({ message: 'Faltan campos obligatorios' });
+    }
+
     // Buscar usuario por cédula o correo
     const usuario = await Usuario.findOne({
       $or: [{ cedula: identificador }, { correo: identificador }]
-    });
+    }).select('+password'); // Esto es obligatorio porque password tiene select: false
 
     if (!usuario) {
       return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    if (!usuario.password) {
+      return res.status(500).json({ message: 'El usuario no tiene contraseña registrada' });
     }
 
     // Comparar contraseñas
