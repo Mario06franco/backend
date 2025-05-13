@@ -116,9 +116,9 @@ const connectDB = async () => {
 };
 connectDB();
 
-app.listen(PORT, () => {
-  console.log(`Servidor corriendo en el puerto ${PORT}`);
-});
+//app.listen(PORT, () => {
+// console.log(`Servidor corriendo en el puerto ${PORT}`);
+//});
 
 
 // Configuración de rutas
