@@ -54,27 +54,52 @@ router.get('/', async (req, res) => {
 
 // Agendar una nueva cita
 router.post('/agendar', async (req, res) => {
-  const { nombre, cedula, fecha, hora, servicio, limitacion, estado } = req.body;
-
-  console.log('Datos recibidos para agendar:', req.body); // <-- Agrega esto
+  // Extraer solo los campos definidos en el modelo
+  const { nombre, cedula, fecha, hora, servicio, limitacion } = req.body;
 
   try {
+    // Validación mejorada
+    if (!nombre || !cedula || !fecha || !hora || !servicio) {
+      return res.status(400).json({
+        error: 'Faltan campos requeridos',
+        detalles: {
+          nombre: !nombre,
+          cedula: !cedula,
+          fecha: !fecha,
+          hora: !hora,
+          servicio: !servicio
+        }
+      });
+    }
+
+    // Crear cita con solo los campos necesarios
     const nuevaCita = new Cita({
-      
       nombre,
       cedula,
       fecha,
       hora,
       servicio,
-      limitacion,
-      estado: estado || 'activa',
+      ...(limitacion && { limitacion }), // Solo añade si existe
+      // estado se asigna por default en el modelo
+      // creado se asigna automáticamente
     });
 
     await nuevaCita.save();
-    res.status(201).json({ mensaje: 'Cita agendada con éxito' });
+    
+    res.status(201).json({ 
+      mensaje: 'Cita agendada con éxito',
+      citaId: nuevaCita._id 
+    });
+
   } catch (error) {
-    console.error('❌ Error en backend al agendar:', error);
-    res.status(500).json({ error: 'Error al agendar la cita EN EL BACKEND', detalle: error.message }); // <-- Muestra el detalle
+    console.error('Error en base de datos:', error);
+    res.status(500).json({ 
+      error: 'Error al guardar la cita',
+      ...(process.env.NODE_ENV === 'development' && {
+        detalle: error.message,
+        stack: error.stack
+      })
+    });
   }
 });
 
