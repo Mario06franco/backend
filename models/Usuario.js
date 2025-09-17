@@ -13,12 +13,12 @@ const usuarioSchema = new mongoose.Schema({
     match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Por favor ingresa un correo válido']
   },
   celular: { type: String, trim: true },
-  password: { type: String, required: true, select: false },
+  password: { type: String, required: true, select : false},  // ← ✅ corregido aquí
   rol: { type: String, enum: ['admin', 'cliente', 'empleado'], default: 'cliente' },
   estado: { type: Boolean, default: true }
 }, { 
   timestamps: true,
-  collection: 'usuarios' // Forzar nombre de colección
+  collection: 'usuarios'
 });
 
 // Hash de contraseña antes de guardar

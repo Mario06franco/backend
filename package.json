@@ -5,11 +5,15 @@
   "resolutions": {
     "path-to-regexp": "6.2.0"
   },
+  
   "scripts": {
-    "preinstall": "npx npm-force-resolutions",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon server.js",
-    "start": "node server.js"
+    "dev": "NODE_ENV=development nodemon server.js",
+    "start": "NODE_ENV=production node server.js",
+    "dev-windows": "set NODE_ENV=development&& nodemon server.js",
+    "start-windows": "set NODE_ENV=production&& node server.js",
+    "check-dev": "NODE_ENV=development node -e \"console.log('Development URI:', process.env.MONGODB_URI)\"",
+    "check-prod": "NODE_ENV=production node -e \"console.log('Production URI:', process.env.MONGODB_URI)\""
+  
   },
   "keywords": [],
   "author": "",
@@ -19,7 +23,7 @@
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
-    "dotenv": "^16.5.0",
+    "dotenv": "^16.6.1",
     "express": "^4.21.2",
     "express-validator": "^7.2.1",
     "jsonwebtoken": "^9.0.2",

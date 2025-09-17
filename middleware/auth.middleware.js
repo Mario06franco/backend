@@ -1,35 +1,45 @@
+const User = require('../models/Usuario'); // Modelo de usuario
 const jwt = require('jsonwebtoken');
-const User = require('../models/User'); // Modelo de usuario
 
-// Middleware de autenticación
-const authenticate = async (req, res, next) => {
-  const token = req.header('Authorization')?.replace('Bearer ', ''); // Extraer el token de los encabezados
+const authenticateToken = (req, res, next) => {
+  console.log('🔐 Middleware de autenticación ejecutándose');
+  
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+
+  console.log('📨 Header Authorization:', authHeader);
+  console.log('🔑 Token recibido:', token ? `SI (${token.substring(0, 20)}...)` : 'NO');
 
   if (!token) {
-    return res.status(401).json({ message: 'Acceso no autorizado: No se proporcionó el token' });
+    console.log('❌ Token no proporcionado');
+    return res.status(401).json({ message: 'Token de acceso requerido' });
   }
 
   try {
-    // Verificar el token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    // Buscar al usuario en la base de datos usando el ID decodificado
-    const user = await User.findById(decoded.id);
-
-    // Si el usuario no existe en la base de datos
-    if (!user) {
-      return res.status(401).json({ message: 'Usuario no encontrado' });
-    }
-
-    // Agregar los datos del usuario al objeto de la solicitud
-    req.user = user;
-
-    // Continuar con la siguiente función de middleware o ruta
+    console.log('✅ Token válido para usuario:', decoded.correo || decoded.id);
+    
+    // Asegurarse de que req.user tenga la estructura correcta
+    req.user = {
+      id: decoded.id,
+      correo: decoded.correo,
+      rol: decoded.rol
+    };
+    
     next();
   } catch (error) {
-    console.error('Error al verificar el token:', error);
-    return res.status(401).json({ message: 'Token inválido o expirado' });
+    console.error('❌ Error verificando token:', error.message);
+    
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: 'Token expirado' });
+    }
+    
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ message: 'Token inválido' });
+    }
+    
+    return res.status(403).json({ message: 'Token no válido' });
   }
 };
 
-module.exports = authenticate;
+module.exports = authenticateToken;

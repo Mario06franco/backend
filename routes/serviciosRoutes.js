@@ -1,25 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const serviciosController = require('../controllers/serviciosController');
-const { check } = require('express-validator');
+const servicioController = require('../controllers/serviciosController');
 
-// Middleware de validación
-const validarServicio = [
-  check('nombre', 'El nombre es obligatorio').not().isEmpty(),
-  check('precio', 'El precio debe ser un número válido').isNumeric(),
-  check('descripcion', 'La descripción es obligatoria').not().isEmpty(),
-  check('duracion', 'La duración es obligatoria').not().isEmpty()
-];
-
-// /api/servicios
-router.route('/')
-  .get(serviciosController.obtenerServicios)
-  .post(validarServicio, serviciosController.crearServicio);
-
-// /api/servicios/:id
-router.route('/:id')
-  .get(serviciosController.obtenerServicio)
-  .put(validarServicio, serviciosController.actualizarServicio)
-  .delete(serviciosController.eliminarServicio);
+// Rutas para servicios
+router.post('/', servicioController.crearServicio);
+router.get('/', servicioController.obtenerServicios);
+router.get('/:id', servicioController.obtenerServicioPorId);
+router.put('/:id', servicioController.actualizarServicio);
+router.delete('/:id', servicioController.eliminarServicio);
 
 module.exports = router;

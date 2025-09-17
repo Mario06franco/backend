@@ -1,57 +1,58 @@
-// models/User.js
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
-const userSchema = new mongoose.Schema({
+const usuarioSchema = new mongoose.Schema({
+  nombre: {
+    type: String,
+    required: true,
+    trim: true
+  },
   cedula: {
     type: String,
     required: true,
     unique: true,
+    trim: true
   },
   correo: {
     type: String,
     required: true,
     unique: true,
     lowercase: true,
+    trim: true
   },
-  nombre: {
+  celular: {
     type: String,
     required: true,
-    trim: true,
-  },
-  telefono: {
-    type: String,
-    required: false,
-  },
-  rol: {
-    type: String,
-    enum: ['admin', 'colaboradora', 'usuario'],
-    default: 'usuario',
-  },
-  estado: {
-    type: Boolean,
-    default: true,
+    trim: true
   },
   password: {
     type: String,
     required: true,
-    minlength: 6,
+    minlength: 6
+  },
+  rol: {
+    type: String,
+    enum: ['admin', 'cliente'],
+    default: 'cliente'
+  },
+  estado: {
+    type: Boolean,
+    default: true
   },
   resetPasswordToken: String,
-  resetPasswordExpires: Date,
-}, { 
-  timestamps: true,
-  collection: "usuarios" // Manteniendo el nombre personalizado de la colección
+  resetPasswordExpires: Date
+}, {
+  timestamps: true
 });
 
-// Hash de la contraseña antes de guardar
-userSchema.pre('save', async function(next) {
-  // Solo hashear la contraseña si ha sido modificada (o es nueva)
+// Middleware para hashear la contraseña antes de guardar
+usuarioSchema.pre('save', async function(next) {
+  // Solo hashear si la contraseña fue modificada
   if (!this.isModified('password')) return next();
   
   try {
-    // Hashear la contraseña con un salt de 12 rondas
-    this.password = await bcrypt.hash(this.password, 12);
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
     next();
   } catch (error) {
     next(error);
@@ -59,8 +60,8 @@ userSchema.pre('save', async function(next) {
 });
 
 // Método para comparar contraseñas
-userSchema.methods.comparePassword = async function(candidatePassword) {
+usuarioSchema.methods.comparePassword = async function(candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
-module.exports = mongoose.model('User', userSchema);
+module.exports = mongoose.model('User', usuarioSchema);

@@ -68,7 +68,7 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// Ruta para obtener todas las historias clínicas
+// Ruta para obtener todas las historias clínicas (solo para admin)
 router.get('/', async (req, res) => {
   try {
     const historias = await HistoriaClinica.find();
@@ -89,10 +89,76 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Ruta para obtener una historia clínica por su cédula
-router.get('/:cedula', async (req, res) => {
+// Ruta para obtener TODAS las historias clínicas de un paciente por su cédula
+router.get('/cedula/:cedula', async (req, res) => {
   try {
-    const historia = await HistoriaClinica.findOne({ cedula: req.params.cedula });
+    const historias = await HistoriaClinica.find({ cedula: req.params.cedula });
+    
+    if (!historias || historias.length === 0) {
+      return res.status(404).json({ message: 'No se encontraron historias clínicas para esta cédula' });
+    }
+
+    // Formatear las fechas de nacimiento
+    const historiasFormateadas = historias.map(historia => {
+      if (historia.datosGenerales.fechaNacimiento) {
+        historia.datosGenerales.fechaNacimiento = new Date(historia.datosGenerales.fechaNacimiento)
+          .toISOString()
+          .split('T')[0];
+      }
+      return historia;
+    });
+
+    res.status(200).json({ message: 'Historias clínicas encontradas', data: historiasFormateadas });
+  } catch (error) {
+    res.status(500).json({ message: 'Error al obtener las historias clínicas', error: error.message });
+  }
+});
+
+
+// Ruta para obtener TODAS las historias clínicas de un paciente por cédula
+router.get('/paciente/:cedula', async (req, res) => {
+  try {
+    const cedula = req.params.cedula;
+    console.log('Buscando historias para cédula:', cedula);
+    
+    const historias = await HistoriaClinica.find({ cedula: cedula });
+    
+    console.log('Historias encontradas:', historias.length);
+    
+    if (!historias || historias.length === 0) {
+      return res.status(404).json({ 
+        message: 'No se encontraron historias clínicas para esta cédula',
+        data: [] 
+      });
+    }
+
+    // Formatear las fechas
+    const historiasFormateadas = historias.map(historia => {
+      if (historia.datosGenerales && historia.datosGenerales.fechaNacimiento) {
+        historia.datosGenerales.fechaNacimiento = new Date(historia.datosGenerales.fechaNacimiento)
+          .toISOString()
+          .split('T')[0];
+      }
+      return historia;
+    });
+
+    res.status(200).json({ 
+      message: 'Historias clínicas encontradas', 
+      data: historiasFormateadas 
+    });
+  } catch (error) {
+    console.error('Error en /paciente/:cedula:', error);
+    res.status(500).json({ 
+      message: 'Error al obtener las historias clínicas', 
+      error: error.message 
+    });
+  }
+});
+
+// Ruta para obtener UNA historia clínica específica por ID (mantener esta)
+router.get('/:id', async (req, res) => {
+  try {
+    const historia = await HistoriaClinica.findById(req.params.id);
     if (!historia) {
       return res.status(404).json({ message: 'Historia clínica no encontrada' });
     }
@@ -114,5 +180,26 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Ruta para debug - ver todas las cédulas
+router.get('/debug/cedulas', async (req, res) => {
+  try {
+    const historias = await HistoriaClinica.find({}, 'cedula datosGenerales.nombreCompleto createdAt');
+    
+    const cedulasUnicas = [...new Set(historias.map(h => h.cedula))];
+    
+    res.status(200).json({
+      totalHistorias: historias.length,
+      cedulasUnicas: cedulasUnicas,
+      detalles: historias.map(h => ({
+        id: h._id,
+        cedula: h.cedula,
+        nombre: h.datosGenerales?.nombreCompleto,
+        fecha: h.createdAt
+      }))
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error en debug', error: error.message });
+  }
+});
 
 module.exports = router;

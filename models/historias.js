@@ -12,7 +12,8 @@ const historiaSchema = new mongoose.Schema({
     fechaNacimiento: { type: Date, required: true },
     ocupacion: { type: String, required: true },
     telefono: { type: String, required: true },
-    correo: { type: String, required: true }
+    correo: { type: String, required: true },
+    motivo: { type: String, required: true } // ← NUEVO CAMPO AGREGADO AQUÍ
   },
   historialClinico: {
     afeccionesCutaneas: [String],
